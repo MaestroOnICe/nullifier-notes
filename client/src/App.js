@@ -25,10 +25,18 @@ function App() {
         // Get the contract instance
         const networkId = await web3.eth.net.getId();
         const deployedNetwork = SecureNotesContract.networks[networkId];
+
+        if (!deployedNetwork) {
+          throw new Error(`Contract not deployed on network ${networkId}`);
+        }
+
         const instance = new web3.eth.Contract(
           SecureNotesContract.abi,
           deployedNetwork && deployedNetwork.address,
         );
+
+        console.log('Contract address:', deployedNetwork.address);
+        console.log('Connected account:', accounts[0]);
 
         setWeb3(web3);
         setAccounts(accounts);
@@ -53,16 +61,27 @@ function App() {
   };
 
   const generateNullifier = (note) => {
-    return web3.utils.sha3(note + Date.now());
+    const hash = web3.utils.sha3(note + Date.now());
+    return hash;
   };
 
   const handleWriteNote = async () => {
     if (!contract || !web3) return;
     try {
-      const encryptedNote = encryptNote(note);
+      const encryptedNote = encryptNote(note)
+      const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
+
       const nullifier = generateNullifier(note);
-      await contract.methods.storeNote(nullifier, encryptedNote).send({ from: accounts[0] });
-      setNullifier(nullifier);
+      const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+
+      console.log('Nullifier (in byte) generated:', nullifierBytes32);
+      console.log('Encrypted Note to store (in byte):', encryptedNoteBytes);
+
+      await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).send({
+        from: accounts[0],
+        gas: 200000 // Specify a gas limit
+      });
+      setNullifier(nullifierBytes32);
     } catch (error) {
       console.error("Error writing note:", error);
     }
@@ -71,7 +90,12 @@ function App() {
   const handleReadNote = async () => {
     if (!contract || !web3) return;
     try {
-      const encryptedNote = await contract.methods.retrieveNote(readNullifier).call({ from: accounts[0] });
+      //const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(readNullifier), 64);
+      console.log('Nullifier (in byte) to use:', readNullifier);
+
+      const encryptedNoteBytes = await contract.methods.retrieveNote(readNullifier).call({ from: accounts[0] });
+      console.log('Encrypted note (in byte) received:', encryptedNoteBytes);
+      const encryptedNote = web3.utils.hexToAscii(encryptedNoteBytes);
       const decryptedNote = decryptNote(encryptedNote);
       setReadNote(decryptedNote);
     } catch (error) {

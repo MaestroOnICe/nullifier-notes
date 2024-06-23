@@ -8,8 +8,12 @@ contract OneTimeNotes {
 
     function storeNote(bytes32 nullifier, bytes memory encryptedNote) public {
         require(!usedNullifiers[nullifier], "Nullifier already used");
+        usedNullifiers[nullifier] = true;
         notes[nullifier] = encryptedNote;
+        emit NoteStored(nullifier); // Add an event for successful storage
     }
+
+    event NoteStored(bytes32 nullifier);
 
     function retrieveNote(bytes32 nullifier) public returns (bytes memory) {
         require(!usedNullifiers[nullifier], "Note already read");
