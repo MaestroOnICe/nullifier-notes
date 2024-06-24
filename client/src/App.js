@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SecureNotesContract from './contracts/OneTimeNotes.json';
 import getWeb3 from './getWeb3';
+import ErrorPopup from './ErrorPopup';
 import CryptoJS from 'crypto-js';
 import { Lock } from 'lucide-react';
 import './App.css';
@@ -16,6 +17,7 @@ function App() {
   const [estimatedCost, setEstimatedCost] = useState(null);
   const [ethToEurRate, setEthToEurRate] = useState(0);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -31,7 +33,7 @@ function App() {
         const deployedNetwork = SecureNotesContract.networks[networkId];
 
         if (!deployedNetwork) {
-          throw new Error(`Contract not deployed on network ${networkId}`);
+          setError(`Contract not deployed on network ${networkId}`);
         }
 
         const instance = new web3.eth.Contract(
@@ -50,7 +52,7 @@ function App() {
         fetchEthToEurRate();
 
       } catch (error) {
-        alert('Failed to load web3, accounts, or contract. Check console for details.');
+        setError('Failed to load web3, accounts, or contract. Check console for details.');
         console.error(error);
       }
     };
@@ -107,7 +109,7 @@ function App() {
       const storedNote = await contract.methods.retrieveNote(nullifierBytes32).call();
       console.log('Stored note (should match encryptedNoteBytes):', storedNote);
     } catch (error) {
-      console.error("Error writing note:", error);
+      setError("Error writing note:", error);
     }
   };
 
@@ -138,6 +140,7 @@ function App() {
         console.log('Stored note retrieved (call):', storedNote);
       } catch (error) {
         console.log('Error calling retrieveNote:', error.message);
+        setError('Error calling retrieveNote:', error.message)
       }
 
       // Call the retrieveNote function
@@ -158,6 +161,7 @@ function App() {
           setReadNote(decryptedNote);
         } else {
           console.log('NoteRetrieved event not found in transaction events');
+          setError('NoteRetrieved event not found in transaction events')
           setReadNote('Note not found');
         }
       } else {
@@ -232,13 +236,14 @@ function App() {
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
+      {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
       <header className="flex justify-between items-center p-4 border-b border-gray-800">
         <div className="flex items-center space-x-6">
           <div className="text-purple-500 font-bold text-xl">
             <Lock size={24} />
           </div>
           <nav className="flex space-x-4">
-            <p className="text-purple-400 font-semibold">Notes</p>
+            <p className="text-purple-400 font-semibold">One-time Notes</p>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
@@ -252,47 +257,45 @@ function App() {
       </header>
 
 
-      <main className="flex justify-center items-center h-[calc(100vh-80px)]">
-        <div className="bg-gray-800 rounded-2xl p-6 w-96 shadow-lg">
-          <h2 className="text-2xl font-bold mb-6 text-center">Write a Note</h2>
-          <div className="mb-4">
-            <textarea
-              value={note}
-              onChange={handleNoteChange}
-              placeholder="Enter your note here"
-              className="w-full p-2 bg-gray-700 rounded-md text-white"
-              rows="4"
-            />
-          </div>
-          <div className="flex justify-between items-center mb-6">
-            <button
-              onClick={handleWriteNote}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
-            >
-              <Lock size={16} className="mr-2" /> Encrypt and Store
-            </button>
-            <span className="text-sm text-gray-400">Estimated cost: {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
-              ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
-              {nullifier && <p>Nullifier: {nullifier}</p>}</span>
-          </div>
+      <main className="max-w-md mx-auto">
+        <h2 className="text-2xl font-bold mb-4">Write a Note</h2>
+        <div className="mb-4">
+          <textarea
+            value={note}
+            onChange={handleNoteChange}
+            placeholder="Enter your note here"
+            className="w-full p-2 bg-gray-700 rounded-md text-white"
+            rows="4"
+          />
+        </div>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={handleWriteNote}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+          >
+            <Lock size={16} className="mr-2" /> Encrypt and Store
+          </button>
+          <span className="text-sm text-gray-400">Estimated cost: {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
+            ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
+            {nullifier && <p>Nullifier: {nullifier}</p>}</span>
+        </div>
 
-          <h2 className="text-2xl font-bold mb-6 text-center">Read a Note</h2>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={readNullifier}
-              onChange={(e) => setReadNullifier(e.target.value)}
-              placeholder="Enter nullifier"
-              className="flex-grow p-2 bg-gray-700 rounded-md text-white"
-            />
-            <button
-              onClick={handleReadNote}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
-            >
-              Retrieve Note
-            </button>
-            {readNote && <p>Retrieved Note: {readNote}</p>}
-          </div>
+        <h2 className="text-2xl font-bold mb-6 text-center">Read a Note</h2>
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={readNullifier}
+            onChange={(e) => setReadNullifier(e.target.value)}
+            placeholder="Enter nullifier"
+            className="flex-grow p-2 bg-gray-700 rounded-md text-white"
+          />
+          <button
+            onClick={handleReadNote}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+          >
+            Retrieve Note
+          </button>
+          {readNote && <p>Retrieved Note: {readNote}</p>}
         </div>
       </main>
     </div>
