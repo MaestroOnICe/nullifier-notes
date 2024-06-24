@@ -12,6 +12,8 @@ function App() {
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState(null);
   const [contract, setContract] = useState(null);
+  const [estimatedCost, setEstimatedCost] = useState(null);
+  const [ethToEurRate, setEthToEurRate] = useState(0);
 
   useEffect(() => {
     const init = async () => {
@@ -41,6 +43,10 @@ function App() {
         setWeb3(web3);
         setAccounts(accounts);
         setContract(instance);
+
+        // fetch eth price
+        fetchEthToEurRate();
+
       } catch (error) {
         alert('Failed to load web3, accounts, or contract. Check console for details.');
         console.error(error);
@@ -135,7 +141,7 @@ function App() {
       // Call the retrieveNote function
       const result = await contract.methods.retrieveNote(readNullifier).send({ from: accounts[0] });
       console.log('Retrieve note transaction result:', result);
-      
+
       // Check if the transaction was successful
       if (result.status) {
         // Check for the NoteRetrieved event in the transaction events
@@ -165,6 +171,54 @@ function App() {
     }
   };
 
+
+  const estimateTransactionCost = async (noteText) => {
+    if (!contract || !web3) return;
+    try {
+      const encryptedNote = encryptNote(noteText);
+      const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
+      const nullifier = generateNullifier(noteText);
+      const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+
+      const gasEstimate = await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).estimateGas({
+        from: accounts[0]
+      });
+
+      // get gas price and convert to eth
+      const gasPrice = await web3.eth.getGasPrice();
+      const estimatedCostWei = gasPrice * gasEstimate;
+      const estimatedCostEther = web3.utils.fromWei(estimatedCostWei.toString(), 'ether');
+      const estimatedCostEuro = (parseFloat(estimatedCostEther) * ethToEurRate).toFixed(2);
+
+      return { estimatedCostEther, estimatedCostEuro };
+    } catch (error) {
+      console.error("Error estimating transaction cost:", error);
+      return null;
+    }
+  };
+
+  const fetchEthToEurRate = async () => {
+    try {
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+      const data = await response.json();
+      setEthToEurRate(data.ethereum.eur);
+    } catch (error) {
+      console.error('Error fetching ETH to EUR rate:', error);
+    }
+  };
+
+  const handleNoteChange = async (e) => {
+    const newNote = e.target.value;
+    setNote(newNote);
+
+    if (newNote.trim() !== '') {
+      const estimated = await estimateTransactionCost(newNote);
+      setEstimatedCost(estimated);
+    } else {
+      setEstimatedCost(null);
+    }
+  };
+
   if (!web3) {
     return <div>Loading Web3, accounts, and contract...</div>;
   }
@@ -177,10 +231,12 @@ function App() {
         <h2>Write a Note</h2>
         <textarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={handleNoteChange}
           placeholder="Enter your note here"
         />
         <button onClick={handleWriteNote}>Encrypt and Store</button>
+        Estimated cost: {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
+        ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
         {nullifier && <p>Nullifier: {nullifier}</p>}
       </div>
 
