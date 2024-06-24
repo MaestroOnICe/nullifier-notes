@@ -4,7 +4,7 @@ Share one-time notes on the blockchain with nullifiers
 
 
 Components:
-1. DApp (With a truffel box)
+1. DApp
 2. Contract
 3. Blockchain (Ganache)
 
@@ -17,27 +17,26 @@ Components:
 
 ## Installation
 
+First clone the repository
+```sh
+$ git clone https://github.com/MaestroOnICe/nullifier-notes
+$ cd nullifier-notes
+```
+
 ### Install the ganache ethereum local testnet
 ```sh
-# Install ganache
+# Install  ganache
 $ npm install -g ganache
 ```
 
-
-
-### Install the truffle
+### Install truffle for smart contract development
 ```sh
-# Install Truffle globally and run `truffle unbox`
+# Install Truffle globally
 $ npm install -g truffle
 ```
 
-```sh
-# Alternatively, run `truffle unbox` via npx
-$ npx truffle unbox react
-```
 
 ## RUN
-
 To run the ganache/ethereum testnet run in a separate terminal
 ```sh
 $ ganache
@@ -51,5 +50,6 @@ $ truffle compile
 Run the DApp with
 ```sh
 $ cd client
+$ npm install
 $ npm start
 ```
