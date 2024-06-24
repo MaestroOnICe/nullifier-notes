@@ -3,7 +3,7 @@ import SecureNotesContract from './contracts/OneTimeNotes.json';
 import getWeb3 from './getWeb3';
 import ErrorPopup from './ErrorPopup';
 import CryptoJS from 'crypto-js';
-import { Lock } from 'lucide-react';
+import { Lock, Copy, Check } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -18,6 +18,8 @@ function App() {
   const [ethToEurRate, setEthToEurRate] = useState(0);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [error, setError] = useState(null);
+  const [noteCopied, setNoteCopied] = useState(false);
+  const [nullifierCopied, setNullifierCopied] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -230,6 +232,20 @@ function App() {
     setIsWalletConnected(true);
   };
 
+  const handleNoteCopy = () => {
+    navigator.clipboard.writeText(readNote).then(() => {
+      setNoteCopied(true);
+      setTimeout(() => setNoteCopied(false), 2000); // Reset copied state after 2 seconds
+    });
+  };
+
+  const handleNullifierCopy = () => {
+    navigator.clipboard.writeText(nullifier).then(() => {
+      setNullifierCopied(true);
+      setTimeout(() => setNullifierCopied(false), 2000); // Reset copied state after 2 seconds
+    });
+  };
+
   if (!web3) {
     return <div>Loading Web3, accounts, and contract...</div>;
   }
@@ -277,7 +293,17 @@ function App() {
           </button>
           <span className="text-sm text-gray-400">Estimated cost: {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
             ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
-            {nullifier && <p>Nullifier: {nullifier}</p>}</span>
+          </span>
+        </div>
+        <div className="flex items-center bg-gray-800 p-2 rounded">
+          <span className="mr-2 text-sm">{nullifier}</span>
+          <button
+            onClick={handleNullifierCopy}
+            className="absolute text-gray-400 hover:text-white"
+            title={nullifierCopied ? "Copied!" : "Copy to clipboard"}
+          >
+            {nullifierCopied ? <Check size={20} /> : <Copy size={20} />}
+          </button>
         </div>
 
         <h2 className="text-2xl font-bold mb-6 text-center">Read a Note</h2>
@@ -295,8 +321,24 @@ function App() {
           >
             Retrieve Note
           </button>
-          {readNote && <p>Retrieved Note: {readNote}</p>}
         </div>
+        {readNote && (
+          <div className="mt-4 relative">
+            <textarea
+              value={readNote}
+              readOnly
+              className="w-full p-2 bg-gray-800 border border-gray-700 rounded"
+              rows="4"
+            />
+            <button
+              onClick={handleNoteCopy}
+              className="absolute top-2 right-2 text-gray-400 hover:text-white"
+              title={noteCopied ? "Copied!" : "Copy to clipboard"}
+            >
+              {noteCopied ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
