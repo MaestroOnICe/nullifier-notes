@@ -79,6 +79,10 @@ function App() {
 
   const handleWriteNote = async () => {
     if (!contract || !web3) return;
+    if (note === "") {
+      setError("Empty note");
+      return;
+    }
     try {
       const encryptedNote = encryptNote(note);
       console.log('Original note:', note);
@@ -119,7 +123,6 @@ function App() {
     if (!contract || !web3) return;
     try {
       console.log('Nullifier (in byte) to use:', readNullifier);
-
       // First, check if the nullifier has been used
       const isUsed = await contract.methods.isNullifierUsed(readNullifier).call();
       console.log('Is nullifier used before retrieval:', isUsed);
@@ -281,10 +284,11 @@ function App() {
             onChange={handleNoteChange}
             placeholder="Enter your note here"
             className="w-full p-2 bg-gray-700 rounded-md text-white"
-            rows="4"
+            rows="6"
+            style={{ resize: "none" }}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-2">
           <button
             onClick={handleWriteNote}
             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
@@ -292,18 +296,19 @@ function App() {
             <Lock size={16} className="mr-2" /> Encrypt and Store
           </button>
         </div>
-        <div className="text-sm text-gray-400">
+        <div className="text-sm text-gray-400 mb-8">
           Estimated cost:
           {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
           ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
         </div>
-        <div className="flex items-center bg-gray-800 p-2 rounded mb-8 relative">
-          <span className="mr-2 text-sm">
-            {nullifier || "Nullifier will appear here executing the smart contract"}
-          </span>
+        <div className="flex items-center bg-gray-700 p-2 rounded mb-8 relative">
+          <textarea
+            className="w-full p-2 bg-gray-700 rounded-md text-white"
+            value={nullifier || "Nullifier will appear here after executing the smart contract"}
+          />
           <button
             onClick={handleNullifierCopy}
-            className="absolute right-2 text-gray-400 hover:text-white"
+            className="absolute right-2 top-2 text-gray-400 hover:text-white"
             title={nullifierCopied ? "Copied!" : "Copy to clipboard"}
             disabled={!nullifier}
           >
@@ -327,16 +332,17 @@ function App() {
             Retrieve Note
           </button>
         </div>
-        <div className="flex items-center bg-gray-800 p-2 rounded mb-8 relative">
+        <div className="flex items-center bg-gray-700 p-2 rounded mb-8 relative">
           <textarea
             value={readNote}
             readOnly
             className="w-full p-2 bg-gray-700 rounded-md text-white"
-            rows="4"
+            rows="6"
+            style={{ resize: "none" }}
           />
           <button
             onClick={handleNoteCopy}
-            className="absolute top-2 right-2 text-gray-400 hover:text-white"
+            className="absolute right-2 top-2 text-gray-400 hover:text-white"
             title={noteCopied ? "Copied!" : "Copy to clipboard"}
           >
             {noteCopied ? <Check size={20} /> : <Copy size={20} />}
