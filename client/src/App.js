@@ -7,10 +7,10 @@ import { Lock, Copy, Check } from 'lucide-react';
 import './App.css';
 
 function App() {
-  const [note, setNote] = useState('');
-  const [nullifier, setNullifier] = useState('');
-  const [readNullifier, setReadNullifier] = useState('');
-  const [readNote, setReadNote] = useState('');
+  const [note, setNote] = useState("");
+  const [nullifier, setNullifier] = useState("");
+  const [readNullifier, setReadNullifier] = useState("");
+  const [readNote, setReadNote] = useState("");
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState(null);
   const [contract, setContract] = useState(null);
@@ -267,14 +267,14 @@ function App() {
             onClick={handleConnectWallet}
             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition-colors"
           >
-            {isWalletConnected ? 'Connected' : 'Connect'}
+            {isWalletConnected ? "Connected" : "Connect"}
           </button>
         </div>
       </header>
 
 
       <main className="max-w-md mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Write a Note</h2>
+        <h2 className="text-2xl font-bold mb-6">Write a Note</h2>
         <div className="mb-4">
           <textarea
             value={note}
@@ -284,30 +284,35 @@ function App() {
             rows="4"
           />
         </div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <button
             onClick={handleWriteNote}
             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
           >
             <Lock size={16} className="mr-2" /> Encrypt and Store
           </button>
-          <span className="text-sm text-gray-400">Estimated cost: {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
-            ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
-          </span>
         </div>
-        <div className="flex items-center bg-gray-800 p-2 rounded">
-          <span className="mr-2 text-sm">{nullifier}</span>
+        <div className="text-sm text-gray-400">
+          Estimated cost:
+          {estimatedCost ? estimatedCost.estimatedCostEther : '0'} ETH
+          ({estimatedCost ? estimatedCost.estimatedCostEuro : '0'} EUR)
+        </div>
+        <div className="flex items-center bg-gray-800 p-2 rounded mb-8 relative">
+          <span className="mr-2 text-sm">
+            {nullifier || "Nullifier will appear here executing the smart contract"}
+          </span>
           <button
             onClick={handleNullifierCopy}
-            className="absolute text-gray-400 hover:text-white"
+            className="absolute right-2 text-gray-400 hover:text-white"
             title={nullifierCopied ? "Copied!" : "Copy to clipboard"}
+            disabled={!nullifier}
           >
             {nullifierCopied ? <Check size={20} /> : <Copy size={20} />}
           </button>
         </div>
 
-        <h2 className="text-2xl font-bold mb-6 text-center">Read a Note</h2>
-        <div className="flex space-x-2">
+        <h2 className="text-2xl font-bold mb-6">Read a Note</h2>
+        <div className="flex space-x-2 mb-8">
           <input
             type="text"
             value={readNullifier}
@@ -322,23 +327,21 @@ function App() {
             Retrieve Note
           </button>
         </div>
-        {readNote && (
-          <div className="mt-4 relative">
-            <textarea
-              value={readNote}
-              readOnly
-              className="w-full p-2 bg-gray-800 border border-gray-700 rounded"
-              rows="4"
-            />
-            <button
-              onClick={handleNoteCopy}
-              className="absolute top-2 right-2 text-gray-400 hover:text-white"
-              title={noteCopied ? "Copied!" : "Copy to clipboard"}
-            >
-              {noteCopied ? <Check size={20} /> : <Copy size={20} />}
-            </button>
-          </div>
-        )}
+        <div className="flex items-center bg-gray-800 p-2 rounded mb-8 relative">
+          <textarea
+            value={readNote}
+            readOnly
+            className="w-full p-2 bg-gray-700 rounded-md text-white"
+            rows="4"
+          />
+          <button
+            onClick={handleNoteCopy}
+            className="absolute top-2 right-2 text-gray-400 hover:text-white"
+            title={noteCopied ? "Copied!" : "Copy to clipboard"}
+          >
+            {noteCopied ? <Check size={20} /> : <Copy size={20} />}
+          </button>
+        </div>
       </main>
     </div>
   );
