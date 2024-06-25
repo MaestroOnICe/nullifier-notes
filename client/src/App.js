@@ -291,9 +291,9 @@ function App() {
         <div className="mb-2">
           <button
             onClick={handleWriteNote}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-md transition-colors flex items-center"
           >
-            <Lock size={16} className="mr-2" /> Encrypt and Store
+            <Lock size={16} className="mr-2" /> <span>Encrypt and Store</span>
           </button>
         </div>
         <div className="text-sm text-gray-400 mb-8">
@@ -303,8 +303,10 @@ function App() {
         </div>
         <div className="flex items-center bg-gray-700 p-2 rounded mb-8 relative">
           <textarea
-            className="w-full p-2 bg-gray-700 rounded-md text-white"
+            className="w-full p-2 pr-6 bg-gray-700 rounded-md text-white"
             value={nullifier || "Nullifier will appear here after executing the smart contract"}
+            style={{ resize: "none" }}
+            readOnly
           />
           <button
             onClick={handleNullifierCopy}
@@ -335,8 +337,9 @@ function App() {
         <div className="flex items-center bg-gray-700 p-2 rounded mb-8 relative">
           <textarea
             value={readNote}
+            placeholder="Note will appear here..."
             readOnly
-            className="w-full p-2 bg-gray-700 rounded-md text-white"
+            className="w-full p-2 pr-6 bg-gray-700 rounded-md text-white"
             rows="6"
             style={{ resize: "none" }}
           />
