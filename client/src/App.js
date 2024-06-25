@@ -77,6 +77,7 @@ function App() {
     return hash;
   };
 
+  // handles interaction with the smart contract
   const handleWriteNote = async () => {
     if (!contract || !web3) return;
     if (note === "") {
@@ -84,36 +85,39 @@ function App() {
       return;
     }
     try {
+      console.log("Original note:", note);
       const encryptedNote = encryptNote(note);
-      console.log('Original note:', note);
-      console.log('Encrypted note:', encryptedNote);
+      console.log("Encrypted note:", encryptedNote);
       const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
+      console.log("Encrypted note in bytes:", encryptedNote);
 
       const nullifier = generateNullifier(note);
       const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
-
+      console.log("Nullifier:", nullifier);
+      console.log("Nullifier in bytes:", nullifierBytes32);
 
       const result = await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).send({
         from: accounts[0],
         gas: 200000 // Specify a gas limit
       });
-      console.log('Store note transaction result:', result);
+      console.log("Store note transaction result:", result);
 
       if (result.events && result.events.NoteStored) {
-        console.log('NoteStored event emitted:', result.events.NoteStored.returnValues);
+        console.log("NoteStored event emitted:", result.events.NoteStored.returnValues);
       } else {
-        console.log('NoteStored event not found in transaction events');
+        setError("NoteStored event not found in transaction events");
       }
 
+      // set the nullifier for the user to copy
       setNullifier(nullifierBytes32);
 
       // Log the status of the nullifier
       const isUsed = await contract.methods.isNullifierUsed(nullifierBytes32).call();
-      console.log('Nullifier used status after storing note:', isUsed);
+      console.log("Nullifier used status after storing note:", isUsed);
 
       // Verify the note was stored
       const storedNote = await contract.methods.retrieveNote(nullifierBytes32).call();
-      console.log('Stored note (should match encryptedNoteBytes):', storedNote);
+      console.log("Stored note (should match encryptedNoteBytes):", storedNote);
     } catch (error) {
       setError("Error writing note:", error);
     }
@@ -121,6 +125,10 @@ function App() {
 
   const handleReadNote = async () => {
     if (!contract || !web3) return;
+
+    if (readNullifier === "") {
+      setError("No nullifier entered")
+    }
     try {
       console.log('Nullifier (in byte) to use:', readNullifier);
       // First, check if the nullifier has been used
@@ -182,14 +190,18 @@ function App() {
     }
   };
 
-
+  // estimates transaction cost for the note based on eth and gas price
   const estimateTransactionCost = async (noteText) => {
     if (!contract || !web3) return;
     try {
       const encryptedNote = encryptNote(noteText);
       const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
+
       const nullifier = generateNullifier(noteText);
       const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+      console.log('Type of nullifierBytes32:', typeof nullifierBytes32);
+      console.log('Size of nullifierBytes32:', nullifierBytes32.length);
+      console.log('nullifierBytes32:', nullifierBytes32);
 
       const gasEstimate = await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).estimateGas({
         from: accounts[0]
@@ -208,16 +220,18 @@ function App() {
     }
   };
 
+  // fetches eth euro rate for estimated cost
   const fetchEthToEurRate = async () => {
     try {
       const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
       const data = await response.json();
       setEthToEurRate(data.ethereum.eur);
     } catch (error) {
-      console.error('Error fetching ETH to EUR rate:', error);
+      setError("Error fetching ETH to EUR rate from coingecko:', error")
     }
   };
 
+  // computes estimated price for storing note on the chain
   const handleNoteChange = async (e) => {
     const newNote = e.target.value;
     setNote(newNote);
@@ -230,11 +244,12 @@ function App() {
     }
   };
 
+  // handles metamask connection
   const handleConnectWallet = () => {
-    // Implement wallet connection logic here
     setIsWalletConnected(true);
   };
 
+  // handle note copy
   const handleNoteCopy = () => {
     navigator.clipboard.writeText(readNote).then(() => {
       setNoteCopied(true);
@@ -242,6 +257,7 @@ function App() {
     });
   };
 
+  // handle nullifier copy
   const handleNullifierCopy = () => {
     navigator.clipboard.writeText(nullifier).then(() => {
       setNullifierCopied(true);
@@ -277,8 +293,8 @@ function App() {
 
 
       <main className="max-w-md mx-auto">
-        <h2 className="text-2xl font-bold mb-6">Write a Note</h2>
-        <div className="mb-4">
+        <h2 className="text-2xl font-bold pt-2 mb-6">Write a Note</h2>
+        <div className="bg-gray-700 p-2 rounded mb-4">
           <textarea
             value={note}
             onChange={handleNoteChange}
