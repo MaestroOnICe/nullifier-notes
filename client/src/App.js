@@ -61,13 +61,13 @@ function App() {
     init();
   }, []);
 
-  const encryptNote = (note) => {
-    const secretKey = 'your-secret-key'; // In a real app, manage this securely
+  const encryptNote = (note, secretKey) => {
+    // const secretKey = 'your-secret-key'; // In a real app, manage this securely
     return CryptoJS.AES.encrypt(note, secretKey).toString();
   };
 
-  const decryptNote = (encryptedNote) => {
-    const secretKey = 'your-secret-key'; // In a real app, manage this securely
+  const decryptNote = (encryptedNote, secretKey) => {
+    // const secretKey = 'your-secret-key'; // In a real app, manage this securely
     const bytes = CryptoJS.AES.decrypt(encryptedNote, secretKey);
     return bytes.toString(CryptoJS.enc.Utf8);
   };
@@ -85,18 +85,18 @@ function App() {
       return;
     }
     try {
+      const nullifier = generateNullifier(note);
+      //const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+      console.log("Nullifier:", nullifier);
+      //console.log("Nullifier in bytes:", nullifierBytes32);
+
       console.log("Original note:", note);
-      const encryptedNote = encryptNote(note);
+      const encryptedNote = encryptNote(note, nullifier);
       console.log("Encrypted note:", encryptedNote);
       const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
-      console.log("Encrypted note in bytes:", encryptedNote);
+      console.log("Encrypted note in bytes:", encryptedNoteBytes);
 
-      const nullifier = generateNullifier(note);
-      const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
-      console.log("Nullifier:", nullifier);
-      console.log("Nullifier in bytes:", nullifierBytes32);
-
-      const result = await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).send({
+      const result = await contract.methods.storeNote(nullifier, encryptedNoteBytes).send({
         from: accounts[0],
         gas: 200000 // Specify a gas limit
       });
@@ -109,14 +109,14 @@ function App() {
       }
 
       // set the nullifier for the user to copy
-      setNullifier(nullifierBytes32);
+      setNullifier(nullifier);
 
       // Log the status of the nullifier
-      const isUsed = await contract.methods.isNullifierUsed(nullifierBytes32).call();
+      const isUsed = await contract.methods.isNullifierUsed(nullifier).call();
       console.log("Nullifier used status after storing note:", isUsed);
 
       // Verify the note was stored
-      const storedNote = await contract.methods.retrieveNote(nullifierBytes32).call();
+      const storedNote = await contract.methods.retrieveNote(nullifier).call();
       console.log("Stored note (should match encryptedNoteBytes):", storedNote);
     } catch (error) {
       setError("Error writing note:", error);
@@ -128,12 +128,13 @@ function App() {
 
     if (readNullifier === "") {
       setError("No nullifier entered")
+      return
     }
     try {
       console.log('Nullifier (in byte) to use:', readNullifier);
       // First, check if the nullifier has been used
       const isUsed = await contract.methods.isNullifierUsed(readNullifier).call();
-      console.log('Is nullifier used before retrieval:', isUsed);
+      console.log('Is nullifier used before retrieval?:', isUsed);
       if (isUsed) {
         setReadNote('This note has already been read.');
         return;
@@ -141,7 +142,7 @@ function App() {
 
       // Check if the note exists
       const noteExists = await contract.methods.noteExists(readNullifier).call();
-      console.log('Note exists:', noteExists);
+      console.log('Does note exists:', noteExists);
       if (!noteExists) {
         setReadNote('Note does not exist');
         return;
@@ -169,7 +170,7 @@ function App() {
 
           const encryptedNote = web3.utils.hexToAscii(encryptedNoteBytes);
           console.log('Encrypted note (ASCII):', encryptedNote);
-          const decryptedNote = decryptNote(encryptedNote);
+          const decryptedNote = decryptNote(encryptedNote, readNullifier);
           console.log('Decrypted note:', decryptedNote);
           setReadNote(decryptedNote);
         } else {
@@ -194,16 +195,17 @@ function App() {
   const estimateTransactionCost = async (noteText) => {
     if (!contract || !web3) return;
     try {
-      const encryptedNote = encryptNote(noteText);
+      const nullifier = generateNullifier(noteText);
+      //const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+
+      const encryptedNote = encryptNote(noteText, nullifier);
       const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
 
-      const nullifier = generateNullifier(noteText);
-      const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
-      console.log('Type of nullifierBytes32:', typeof nullifierBytes32);
-      console.log('Size of nullifierBytes32:', nullifierBytes32.length);
-      console.log('nullifierBytes32:', nullifierBytes32);
+      // console.log('Type of nullifierBytes32:', typeof nullifierBytes32);
+      // console.log('Size of nullifierBytes32:', nullifierBytes32.length);
+      // console.log('nullifierBytes32:', nullifierBytes32);
 
-      const gasEstimate = await contract.methods.storeNote(nullifierBytes32, encryptedNoteBytes).estimateGas({
+      const gasEstimate = await contract.methods.storeNote(nullifier, encryptedNoteBytes).estimateGas({
         from: accounts[0]
       });
 
@@ -215,6 +217,7 @@ function App() {
 
       return { estimatedCostEther, estimatedCostEuro };
     } catch (error) {
+      setError(error)
       console.error("Error estimating transaction cost:", error);
       return null;
     }
