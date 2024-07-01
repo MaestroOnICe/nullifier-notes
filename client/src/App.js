@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SecureNotesContract from './contracts/OneTimeNotes.json';
-import getWeb3 from './getWeb3';
-import ErrorPopup from './ErrorPopup';
+import getWeb3 from './getWeb3.js';
+import ErrorPopup from './ErrorPopup.js';
 import CryptoJS from 'crypto-js';
 import { Lock, Copy, Check } from 'lucide-react';
 import './App.css';
