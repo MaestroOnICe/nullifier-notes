@@ -53,3 +53,7 @@ $ cd client
 $ npm install
 $ npm start
 ```
+
+
+### Sepolia Eth Testnet faucet
+https://blastapi.io/faucets/ethereum-sepolia
