@@ -54,6 +54,8 @@ $ npm install
 $ npm start
 ```
 
+## Documentation
+Design choices, explanations and additional information can be found [here](docs/README.md)
 
 ### Sepolia Eth Testnet faucet
 https://blastapi.io/faucets/ethereum-sepolia

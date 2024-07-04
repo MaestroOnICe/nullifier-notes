@@ -148,6 +148,7 @@ function App() {
         return;
       }
 
+      //TODO FIX this, user can retrieve note without sending the transaction and read note multiple times
       // Try to call the retrieveNote function without sending a transaction
       try {
         const storedNote = await contract.methods.retrieveNote(readNullifier).call();
