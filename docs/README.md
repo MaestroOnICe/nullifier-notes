@@ -17,12 +17,12 @@ where the hash could be SHA and the text a String or something else. What we ini
 ```javascript
 const hash = web3.utils.sha3(note + Date.now());
 ```
-
+0x5baf10211f6fb43b79d1827c1d5edda50589b4862ac394d3fd9b48dfd6e64c8c
 ## DApp architecture
 **Step 1:**
 Alice creates a Note in the DApp, the note is encrypted with the nullifier. Both the encrypted note and the nullifier are than committed to the smart contract.
 
-```Mermaid
+```mermaid
 sequenceDiagram
     Actor Client
     participant DApp
@@ -57,7 +57,7 @@ The encrypted note is saved in a mapping, identified by the nullifier. Crucial f
 
 **Step 2:**
 Alice has to "somehow" communicate the nullifier to Bob
-```Mermaid
+```mermaid
 graph LR
     Alice((Alice))
     Bob((Bob))
@@ -65,7 +65,7 @@ graph LR
 ```
 **Step3:**
 Bob uses the nullifier to redeem the note an decrypt it.
-```Mermaid
+```mermaid
 sequenceDiagram
     Actor Client
     participant DApp
@@ -90,17 +90,17 @@ sequenceDiagram
 Below is the function in the smart contract responsible for retrieving the note. Very important is the check if the nullifier has been used before. 
 
 ```solidity
-    function retrieveNote(bytes32 nullifier) public returns (bytes memory) {
-        require(!usedNullifiers[nullifier], "Note already read");
-        bytes memory note = notes[nullifier];
-        require(note.length > 0, "Note does not exist");
-        
-        usedNullifiers[nullifier] = true;
-        // potentially delete the note
-        // delete notes[nullifier];
-        emit NoteRetrieved(nullifier, note);
-        return note;
-    }
+function retrieveNote(bytes32 nullifier) public returns (bytes memory) {
+    require(!usedNullifiers[nullifier], "Note already read");
+    bytes memory note = notes[nullifier];
+    require(note.length > 0, "Note does not exist");
+    
+    usedNullifiers[nullifier] = true;
+    // potentially delete the note
+    // delete notes[nullifier];
+    emit NoteRetrieved(nullifier, note);
+    return note;
+}
 ```
 
 ### So all good? Not quite
