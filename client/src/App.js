@@ -4,6 +4,7 @@ import getWeb3 from './getWeb3.js';
 import Version1 from "./version1.js"
 import Version2 from "./version2.js"
 import ErrorPopup from './ErrorPopup.js';
+import Modal from './Modal.js'
 import { Lock } from 'lucide-react';
 import './App.css';
 
@@ -13,8 +14,9 @@ function App() {
   const [accounts, setAccounts] = useState(null);
   const [error, setError] = useState(null);
   const [contract, setContract] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [ethToEurRate, setEthToEurRate] = useState(0);
+  const [ethToEurRate, setEthToEurRate] = useState(1);
   const navItems = [
     { id: 'v1', label: 'Version 1', component: Version1, props: { accounts: accounts, contract: contract, ethToEurRate: ethToEurRate, web3: web3, setError: setError } },
     { id: 'v2', label: 'Version 2', component: Version2 },
@@ -24,39 +26,12 @@ function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Get network provider and web3 instance
-        const web3 = await getWeb3();
-
-        // Use web3 to get the user's accounts
-        const accounts = await web3.eth.getAccounts();
-
-        // Get the contract instance
-        const networkId = await web3.eth.net.getId();
-        const deployedNetwork = SecureNotesContract.networks[networkId];
-
-        if (!deployedNetwork) {
-          setError(`Contract not deployed on network ${networkId}`);
-          //console.log(`Contract not deployed on network ${networkId}`)
-        }
-
-        const instance = new web3.eth.Contract(
-          SecureNotesContract.abi,
-          deployedNetwork && deployedNetwork.address,
-        );
-
-        console.log('Contract address:', deployedNetwork.address);
-        console.log('Connected account:', accounts[0]);
-
-        setWeb3(web3);
-        setAccounts(accounts);
-        setContract(instance);
-
         // fetch eth price
         fetchEthToEurRate();
 
       } catch (error) {
-        setError('Failed to load web3, accounts, or contract. Check console for details.');
-        console.error(error);
+        setError('Failed init the DApp.');
+        //console.error(error);
       }
     };
     init();
@@ -69,22 +44,60 @@ function App() {
       const data = await response.json();
       setEthToEurRate(data.ethereum.eur);
     } catch (error) {
-      //setError("Error fetching ETH to EUR rate from coingecko:', error")
+      setError("Error fetching ETH to EUR rate from coingecko:', error")
     }
   };
 
-  // handles metamask connection
-  const handleConnectWallet = () => {
-    setIsWalletConnected(true);
-    setError("Done")
+
+  const connectToProvider = async (providerType) => {
+    try {
+      // Get network provider and web3 instance
+      console.log("Calling getWeb3");
+      const web3Instance = await getWeb3(providerType);
+      console.log("getWeb3 returned successfully", web3Instance);
+
+      // Get network provider and web3 instance
+      const accounts = await web3Instance.eth.getAccounts();
+
+      // Get the contract instance
+      const networkId = await web3Instance.eth.net.getId();
+      const deployedNetwork = SecureNotesContract.networks[networkId];
+
+      if (!deployedNetwork) {
+        setError(`Contract not deployed on network ${networkId}`);
+      }
+
+      const contractInstance = new web3Instance.eth.Contract(
+        SecureNotesContract.abi,
+        deployedNetwork && deployedNetwork.address,
+      );
+
+      console.log('Contract address:', deployedNetwork.address);
+      console.log('Connected account:', accounts[0]);
+
+      setWeb3(web3Instance);
+      setAccounts(accounts);
+      setContract(contractInstance)
+      setIsModalOpen(false);
+      setIsWalletConnected(true)
+
+      console.log(`Connected to ${providerType} with address: ${accounts[0]}`);
+    } catch (error) {
+      console.error('Error connecting to provider:', error);
+      setError('Error connecting to provider:', error)
+    }
   };
 
 
+  const handelConnect = () => {
+    setIsModalOpen(true);
+  };
 
+  const handleConnectionSelect = (option) => {
+    console.log(`Selected connection: ${option}`);
+    connectToProvider(option)
+  };
 
-  if (!web3) {
-    return <div>Loading Web3, accounts, and contract...</div>;
-  }
 
   const activeItem = navItems.find(item => item.id === activeNav) || navItems[0];
   const ActiveComponent = activeItem.component;
@@ -112,7 +125,7 @@ function App() {
         </div>
         <div className="flex items-center space-x-4">
           <button
-            onClick={handleConnectWallet}
+            onClick={handelConnect}
             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition-colors"
           >
             {isWalletConnected ? "Connected" : "Connect"}
@@ -123,6 +136,11 @@ function App() {
       <main className="container mx-auto mt-8 px-4">
         <ActiveComponent {...activeItem.props} />
       </main>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleConnectionSelect}
+      />
     </div>
   );
 };

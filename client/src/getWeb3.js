@@ -1,40 +1,57 @@
 import Web3 from "web3";
 
-const getWeb3 = () =>
+const getWeb3 = (providerType) =>
     new Promise((resolve, reject) => {
-        // Wait for loading completion to avoid race conditions with web3 injection timing.
-        window.addEventListener("load", async () => {
-            // Modern dapp browsers...
+        console.log(`getWeb3 called with providerType: ${providerType}`);
 
+        const connectMetamask = async () => {
+            console.log("Attempting to connect to Metamask");
             if (window.ethereum) {
                 const web3 = new Web3(window.ethereum);
                 try {
-                    // Request account access if needed
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    // Accounts now exposed
+                    console.log("Connected to Metamask successfully");
                     resolve(web3);
                 } catch (error) {
+                    console.error("Error connecting to Metamask:", error);
                     reject(error);
                 }
-            }
-            //Legacy dapp browsers...
-            else if (window.web3) {
-                //Use Mist/MetaMask's provider.
+            } else if (window.web3) {
                 const web3 = window.web3;
                 console.log("Injected web3 detected.");
                 resolve(web3);
+            } else {
+                console.error("No Metamask (or other Web3 provider) installed");
+                reject("No Metamask (or other Web3 provider) installed");
             }
+        };
 
-            //Fallback to localhost; use dev console port by default...
-            else {
-                const provider = new Web3.providers.HttpProvider(
-                    "http://127.0.0.1:8545"
-                );
-                const web3 = new Web3(provider);
-                console.log("No web3 instance injected, using Local web3.");
-                resolve(web3);
+        const connectLocalhost = () => {
+            console.log("Trying to connect to localhost");
+            const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
+            const web3 = new Web3(provider);
+            console.log("Using Local web3.");
+            resolve(web3);
+        };
+
+        const initializeWeb3 = async () => {
+            console.log("Window loaded, initializing Web3");
+            if (providerType === 'metamask') {
+                await connectMetamask();
+            } else if (providerType === "localhost") {
+                connectLocalhost();
+            } else {
+                console.error(`Unsupported provider type: ${providerType}`);
+                reject(`Unsupported provider type: ${providerType}`);
             }
-        });
+        };
+
+        if (document.readyState === 'complete') {
+            console.log("Document already loaded, initializing immediately");
+            initializeWeb3();
+        } else {
+            console.log("Waiting for window load event");
+            window.addEventListener("load", initializeWeb3);
+        }
     });
-
 export default getWeb3;

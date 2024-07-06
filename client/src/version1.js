@@ -30,11 +30,13 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
 
     // handles interaction with the smart contract
     const handleWriteNote = async () => {
-        if (!contract || !web3) return;
+        if (!contract || !web3) {
+            setError("Web3 instance not found or contract missing")
+            return;
+        }
         if (note === "") {
             console.log("emoty")
             setError("Empty note");
-
             return;
         }
         try {
@@ -77,8 +79,10 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
     };
 
     const handleReadNote = async () => {
-        if (!contract || !web3) return;
-
+        if (!contract || !web3) {
+            setError("Web3 instance not found or contract missing")
+            return;
+        }
         if (readNullifier === "") {
             setError("No nullifier entered")
             return
