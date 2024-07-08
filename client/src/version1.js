@@ -35,30 +35,29 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
             return;
         }
         if (note === "") {
-            console.log("emoty")
             setError("Empty note");
             return;
         }
         try {
             const nullifier = generateNullifier(note);
-            //const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
-            console.log("Nullifier:", nullifier);
-            //console.log("Nullifier in bytes:", nullifierBytes32);
+            // const nullifierBytes32 = web3.utils.padLeft(web3.utils.toHex(nullifier), 64);
+            // console.log("Nullifier:", nullifier);
+            // console.log("Nullifier in bytes:", nullifierBytes32);
 
-            console.log("Original note:", note);
+            // console.log("Original note:", note);
             const encryptedNote = encryptNote(note, nullifier);
-            console.log("Encrypted note:", encryptedNote);
+            // console.log("Encrypted note:", encryptedNote);
             const encryptedNoteBytes = web3.utils.asciiToHex(encryptedNote);
-            console.log("Encrypted note in bytes:", encryptedNoteBytes);
+            // console.log("Encrypted note in bytes:", encryptedNoteBytes);
 
             const result = await contract.methods.storeNote(nullifier, encryptedNoteBytes).send({
                 from: accounts[0],
                 gas: 200000 // Specify a gas limit
             });
-            console.log("Store note transaction result:", result);
+            // console.log("Store note transaction result:", result);
 
             if (result.events && result.events.NoteStored) {
-                console.log("NoteStored event emitted:", result.events.NoteStored.returnValues);
+                // console.log("NoteStored event emitted:", result.events.NoteStored.returnValues);
             } else {
                 setError("NoteStored event not found in transaction events");
             }
@@ -68,13 +67,13 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
 
             // Log the status of the nullifier
             const isUsed = await contract.methods.isNullifierUsed(nullifier).call();
-            console.log("Nullifier used status after storing note:", isUsed);
+            // console.log("Nullifier used status after storing note:", isUsed);
 
             // Verify the note was stored
             const storedNote = await contract.methods.retrieveNote(nullifier).call();
-            console.log("Stored note (should match encryptedNoteBytes):", storedNote);
+            // console.log("Stored note (should match encryptedNoteBytes):", storedNote);
         } catch (error) {
-            setError("Error writing note:", error);
+            setError(`Error writing note: ${error.message || JSON.stringify(error)}`);
         }
     };
 
@@ -88,10 +87,10 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
             return
         }
         try {
-            console.log('Nullifier (in byte) to use:', readNullifier);
+            // console.log('Nullifier (in byte) to use:', readNullifier);
             // First, check if the nullifier has been used
             const isUsed = await contract.methods.isNullifierUsed(readNullifier).call();
-            console.log('Is nullifier used before retrieval?:', isUsed);
+            // console.log('Is nullifier used before retrieval?:', isUsed);
             if (isUsed) {
                 setReadNote('This note has already been read.');
                 return;
@@ -99,7 +98,7 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
 
             // Check if the note exists
             const noteExists = await contract.methods.noteExists(readNullifier).call();
-            console.log('Does note exists:', noteExists);
+            // console.log('Does note exists:', noteExists);
             if (!noteExists) {
                 setReadNote('Note does not exist');
                 return;
@@ -109,43 +108,43 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
             // Try to call the retrieveNote function without sending a transaction
             try {
                 const storedNote = await contract.methods.retrieveNote(readNullifier).call();
-                console.log('Stored note retrieved (call):', storedNote);
+                // console.log('Stored note retrieved (call):', storedNote);
             } catch (error) {
-                console.log('Error calling retrieveNote:', error.message);
-                setError('Error calling retrieveNote:', error.message)
+                // console.log('Error calling retrieveNote:', error.message);
+                setError(`Error calling retrieveNote: ${error.message || JSON.stringify(error)}`)
             }
 
             // Call the retrieveNote function
             const result = await contract.methods.retrieveNote(readNullifier).send({ from: accounts[0] });
-            console.log('Retrieve note transaction result:', result);
+            // console.log('Retrieve note transaction result:', result);
 
             // Check if the transaction was successful
             if (result.status) {
                 // Check for the NoteRetrieved event in the transaction events
                 if (result.events && result.events.NoteRetrieved) {
                     const encryptedNoteBytes = result.events.NoteRetrieved.returnValues.encryptedNote;
-                    console.log('Encrypted note (in byte) received:', encryptedNoteBytes);
+                    // console.log('Encrypted note (in byte) received:', encryptedNoteBytes);
 
                     const encryptedNote = web3.utils.hexToAscii(encryptedNoteBytes);
-                    console.log('Encrypted note (ASCII):', encryptedNote);
+                    // console.log('Encrypted note (ASCII):', encryptedNote);
                     const decryptedNote = decryptNote(encryptedNote, readNullifier);
-                    console.log('Decrypted note:', decryptedNote);
+                    // console.log('Decrypted note:', decryptedNote);
                     setReadNote(decryptedNote);
                 } else {
-                    console.log('NoteRetrieved event not found in transaction events');
-                    setError('NoteRetrieved event not found in transaction events')
-                    setReadNote('Note not found');
+                    // console.log('NoteRetrieved event not found in transaction events');
+                    setError("NoteRetrieved event not found in transaction events")
+                    setReadNote("Note not found");
                 }
             } else {
-                setReadNote('Transaction failed');
+                setReadNote("Transaction failed");
             }
 
             // Log the status of the nullifier
             const isUsedAfter = await contract.methods.isNullifierUsed(readNullifier).call();
-            console.log('Nullifier used status after retrieving note:', isUsedAfter);
+            // console.log("Nullifier used status after retrieving note:, isUsedAfter);
         } catch (error) {
-            console.error("Error reading note:", error);
-            setReadNote('Error: ' + error.message);
+            // console.error("Error reading note:", error);
+            setReadNote(`Error: ${error.message || JSON.stringify(error)}`);
         }
     };
 

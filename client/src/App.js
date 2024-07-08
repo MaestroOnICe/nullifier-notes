@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Lock } from 'lucide-react';
 import SecureNotesContract from './contracts/OneTimeNotes.json';
-import getWeb3 from './getWeb3.js';
-import Version1 from "./version1.js"
-import Version2 from "./version2.js"
 import ErrorPopup from './ErrorPopup.js';
 import SuccessPopup from './SuccessPopup.js';
 import Modal from './Modal.js'
-import { Lock } from 'lucide-react';
+import getWeb3 from './getWeb3.js';
+import Version1 from "./version1.js"
+import Version2 from "./version2.js"
+
 import './App.css';
 
 function App() {
@@ -32,8 +33,7 @@ function App() {
         fetchEthToEurRate();
 
       } catch (error) {
-        setError('Failed init the DApp.');
-        //console.error(error);
+        setError(`Failed init the DApp: ${error.message || JSON.stringify(error)}`);
       }
     };
     init();
@@ -46,22 +46,19 @@ function App() {
       const data = await response.json();
       setEthToEurRate(data.ethereum.eur);
     } catch (error) {
-      setError("Error fetching ETH to EUR rate from coingecko:', error")
+      setError(`Error fetching ETH to EUR rate from coingecko: ${error.message || JSON.stringify(error)}`)
     }
   };
-
 
   const connectToProvider = async (providerType) => {
     try {
       // Get network provider and web3 instance
-      console.log("Calling getWeb3");
+      //console.log("Calling getWeb3");
       const web3Instance = await getWeb3(providerType);
-      console.log("getWeb3 returned successfully", web3Instance);
+      //console.log("getWeb3 returned successfully", web3Instance);
 
-      // Get network provider and web3 instance
       const accounts = await web3Instance.eth.getAccounts();
 
-      // Get the contract instance
       const networkId = await web3Instance.eth.net.getId();
       const deployedNetwork = SecureNotesContract.networks[networkId];
 
@@ -69,13 +66,14 @@ function App() {
         setError(`Contract not deployed on network ${networkId}`);
       }
 
+      // Get the contract instance
       const contractInstance = new web3Instance.eth.Contract(
         SecureNotesContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
 
-      console.log('Contract address:', deployedNetwork.address);
-      console.log('Connected account:', accounts[0]);
+      // console.log('Contract address:', deployedNetwork.address);
+      // console.log('Connected account:', accounts[0]);
 
       setWeb3(web3Instance);
       setAccounts(accounts);
@@ -83,11 +81,11 @@ function App() {
       setIsModalOpen(false);
       setIsWalletConnected(true)
 
-      console.log(`Connected to ${providerType} with address: ${accounts[0]}`);
-      setMsg("Connected")
+      const networkType = await web3Instance.eth.net.getId()
+      setMsg(`Connected to ${providerType} with address: ${accounts[0]}. Contract address is ${deployedNetwork.address} deployed on ${networkType}`)
+
     } catch (error) {
-      console.error('Error connecting to provider:', error);
-      setError('Error connecting to provider:', error)
+      setError(`Error connecting to provider: ${error.message || JSON.stringify(error)}`)
     }
   };
 
@@ -97,10 +95,9 @@ function App() {
   };
 
   const handleConnectionSelect = (option) => {
-    console.log(`Selected connection: ${option}`);
+    //console.log(`Selected connection: ${option}`);
     connectToProvider(option)
   };
-
 
   const activeItem = navItems.find(item => item.id === activeNav) || navItems[0];
   const ActiveComponent = activeItem.component;
