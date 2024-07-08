@@ -4,6 +4,7 @@ import getWeb3 from './getWeb3.js';
 import Version1 from "./version1.js"
 import Version2 from "./version2.js"
 import ErrorPopup from './ErrorPopup.js';
+import SuccessPopup from './SuccessPopup.js';
 import Modal from './Modal.js'
 import { Lock } from 'lucide-react';
 import './App.css';
@@ -13,6 +14,7 @@ function App() {
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState(null);
   const [error, setError] = useState(null);
+  const [msg, setMsg] = useState(null);
   const [contract, setContract] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -82,6 +84,7 @@ function App() {
       setIsWalletConnected(true)
 
       console.log(`Connected to ${providerType} with address: ${accounts[0]}`);
+      setMsg("Connected")
     } catch (error) {
       console.error('Error connecting to provider:', error);
       setError('Error connecting to provider:', error)
@@ -105,6 +108,7 @@ function App() {
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       {error && <ErrorPopup message={error} onClose={() => setError(null)} />}
+      {msg && <SuccessPopup message={msg} onClose={() => setMsg(null)} />}
       <header className="flex justify-between items-center p-4 border-b border-gray-800">
         <div className="flex items-center space-x-6">
           <div className="text-purple-500 font-bold text-xl">
