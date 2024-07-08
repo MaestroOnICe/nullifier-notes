@@ -22,7 +22,7 @@ function App() {
   const [ethToEurRate, setEthToEurRate] = useState(1);
   const navItems = [
     { id: 'v1', label: 'Version 1', component: Version1, props: { accounts: accounts, contract: contract, ethToEurRate: ethToEurRate, web3: web3, setError: setError } },
-    { id: 'v2', label: 'Version 2', component: Version2 },
+    { id: 'v2', label: 'Version 2', component: Version2, props: { accounts: accounts, contract: contract, ethToEurRate: ethToEurRate, web3: web3, setError: setError } },
   ];
   const [activeNav, setActiveNav] = useState(navItems[0].id);
 

@@ -8,12 +8,14 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
     const [readNullifier, setReadNullifier] = useState("");
     const [readNote, setReadNote] = useState("");
     const [estimatedCost, setEstimatedCost] = useState(null);
-
     const [noteCopied, setNoteCopied] = useState(false);
     const [nullifierCopied, setNullifierCopied] = useState(false);
 
     const encryptNote = (note, secretKey) => {
-        // const secretKey = 'your-secret-key'; // In a real app, manage this securely
+        console.log(note)
+        console.log(typeof (note))
+        console.log(secretKey)
+        console.log(typeof (secretKey))
         return CryptoJS.AES.encrypt(note, secretKey).toString();
     };
 
@@ -170,7 +172,7 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
             return { estimatedCostEther, estimatedCostEuro };
         } catch (error) {
             setError(error)
-            console.error("Error estimating transaction cost:", error);
+            console.error(`Error estimating transaction cost:  ${error.message || JSON.stringify(error)}`);
             return null;
         }
     };
@@ -181,7 +183,7 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
         setNote(newNote);
 
         if (newNote.trim() !== '') {
-            const estimated = await estimateTransactionCost(newNote);
+            const estimated = await estimateTransactionCost(newNote, ethToEurRate);
             setEstimatedCost(estimated);
         } else {
             setEstimatedCost(null);
