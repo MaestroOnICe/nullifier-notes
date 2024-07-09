@@ -208,7 +208,9 @@ const Version1 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
 
     return (
         <main className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold pt-2 mb-6">Write a Note</h2>
+            <p className="text-2xl font-bold pt-2">Write a Note</p>
+            <p className="text-sm font-bold pt-2 mb-6">with a nullifier </p>
+
             <div className="bg-gray-700 p-2 rounded mb-4">
                 <textarea
                     value={note}

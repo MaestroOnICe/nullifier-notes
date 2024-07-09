@@ -119,8 +119,72 @@ and we find the encrypted data:
 
 we then use AES to decrypt the message. We then get the note. Therefore this method is not secure!
 
-## Traditional architecture
+## DApp architecture v2
+Therefore we propose a altered version of the original DApp design. We use a [key derivation function](https://en.wikipedia.org/wiki/Key_derivation_function) or short KDF. When a note is created we create a secret on the client side. It can be extended into a 1. nullifier and 2. a secret key for encryption. The secret key is only used locally to encrypt and decrypt the note. The nullifier is shared in the smart contract and is used to prevent double spending.
 
+The changed design can be seen below:
+```mermaid
+sequenceDiagram
+    Actor Client
+    participant DApp
+    participant SmartContract
+    
+    Client->>DApp: Enter note
+    DApp->>DApp: Generate secret
+    DApp->>DApp: Derive secret key (SK) and the nullifier
+    DApp->>DApp: Encrypt the note with SK
+
+    DApp->>SmartContract: Send encrypted note and nullifier
+```
+With this design the encryption key can only be known used when the secret is known and is not saved on the blockchain.
+
+Analog to **Step 2** above the secret is then shared or somehow transferred to Bob.
+
+The retrieve part if this design then involves splitting the secret locally in the key SK and the nullifier. Using the nullifier to get the note and than decrypting it.
+
+This can be found in the DApp as *Version 2* in the header.
+
+### Okay we fixed all problems, right? No
+For those who work with blockchains more frequent the problem will be obvious. We save the save the encrypted note in the smart contract and prevent *double reading* with the nullifier. But as the blockchain is a append only ledger, we can not erase the encrypted note send to the contract in the associated transaction. Meaning the person, which knows the transaction hash were the note was saved in the contract can read it again and again. If the deciphering is known. But we should just assume it is. 
+
+
+## Traditional architecture
+Here we have traditional design for the same functionality. Compared to **version 2** of the decentralized approach this service has to be trusted to mark notes as read. There is no publicly available smart contract to audit the onetime use of the note. The notes are encrypted with the nullifier as a key. The nullifier is available for the service so the notes could be read. This could be mitigated by also using a secret and a KDF to create nullifier and secret key.
+
+```mermaid
+sequenceDiagram
+    Actor Sender
+    participant WebApp
+    participant Backend
+    participant Database
+    Actor Receiver
+
+    Sender->>WebApp: Create note
+    WebApp->>WebApp: Create nullifier and encrypt note with it
+    WebApp->>Backend: Send encrypted note and nullifier
+    Backend->>Database: Store encrypted note with nullifier
+    Database->>Backend: Confirm storage
+    Backend->>WebApp: Return success
+    WebApp->>Sender: Return success
+
+    Note over Sender,Receiver: Sender shares nullifier with Receiver securely
+
+    Receiver->>WebApp: Enter nullifier
+    WebApp->>Backend: Request note with nullifier
+    Backend->>Database: Query note by nullifier
+    Database->>Backend: Return encrypted note if exists
+    Backend->>Backend: Verify note hasn't been read
+    alt Note exists and unread
+        Backend->>Database: Mark note as read and schedule for deletion
+        Backend->>WebApp: Return encrypted note
+        WebApp->>WebApp: Decrypt note with nullifier
+        WebApp->>Receiver: Display decrypted note
+    else Note doesn't exist or already read
+        Backend->>WebApp: Return error
+        WebApp->>Receiver: Display error message
+    end
+    Note over Database: Scheduled task periodically removes read notes
+```
 
 ## References
 <a id="1">[1]</a> Remco Bloemen, Nullifiers, 2024, https://2π.com/22/nullifiers/

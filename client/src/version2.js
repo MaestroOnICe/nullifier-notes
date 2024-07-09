@@ -301,7 +301,7 @@ const Version2 = ({ accounts, contract, ethToEurRate, web3, setError }) => {
                     type="text"
                     value={readSecret}
                     onChange={(e) => setReadSecret(e.target.value)}
-                    placeholder="Enter nullifier"
+                    placeholder="Enter secret"
                     className="flex-grow p-2 bg-gray-700 rounded-md text-white"
                 />
                 <button
